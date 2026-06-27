@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+build/
+.env
+
+# Obsidian local workspace settings (do not sync these, as they are specific to your machine's screen size)
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

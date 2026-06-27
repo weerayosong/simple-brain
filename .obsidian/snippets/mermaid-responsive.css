@@ -1,0 +1,17 @@
+/* ทำให้ Mermaid Diagram ที่กว้างเกินไปสามารถ Scroll แนวนอนได้ */
+.markdown-preview-view .mermaid,
+.markdown-rendered .mermaid,
+.markdown-source-view.mod-cm6 .mermaid {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding-bottom: 10px; /* เว้นที่ให้ Scrollbar */
+}
+
+/* ป้องกันไม่ให้ SVG หดตัวจนตัวหนังสือเล็กเกินไป (รักษาขนาดเดิมไว้แล้วใช้ Scroll เอา) */
+.markdown-preview-view .mermaid svg,
+.markdown-rendered .mermaid svg,
+.markdown-source-view.mod-cm6 .mermaid svg {
+    max-width: none !important;
+    height: auto;
+}

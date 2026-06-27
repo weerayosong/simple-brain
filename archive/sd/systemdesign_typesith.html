@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+Thai:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+
+        <title>TypeSith - Architecture Documentation</title>
+
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+        <style>
+            body {
+                font-family: "Inter", "Noto Sans Thai", sans-serif !important;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-slate-50 text-slate-800 font-sans antialiased p-6 lg:p-12 relative"
+    >
+        <div class="max-w-5xl mx-auto space-y-12">
+            <header
+                class="border-b-2 border-slate-200 pb-6 flex justify-between items-end"
+            >
+                <div>
+                    <h1
+                        class="text-4xl font-extrabold text-slate-900 tracking-tight uppercase"
+                    >
+                        Type<span class="text-red-600">Sith</span>
+                    </h1>
+                    <p
+                        class="text-slate-500 mt-2 font-semibold tracking-widest uppercase text-sm"
+                    >
+                        Frontend Architecture & System Design Documentation
+                    </p>
+                </div>
+                <div
+                    class="text-right text-xs font-bold text-slate-400 uppercase"
+                >
+                    React + TypeScript
+                </div>
+            </header>
+
+            <section
+                class="bg-white p-6 rounded-md shadow-sm border border-slate-200 border-t-4 border-t-slate-700"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    1. Component Hierarchy & Architecture
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">
+                    โปรเจคต์นี้สร้างมาเพื่อฝึกฝนการใช้งาน TypeScript ดังนั้น
+                    <br />
+                    โครงสร้างของ React Components ทั้งหมดจะเป็น
+                    <code class="text-red-600 font-mono">App.tsx</code>
+                    ที่่ทำหน้าที่เป็น Single Source of Truth
+                    <span class="text-slate-700 font-semibold"
+                        >(คลิกที่ภาพเพื่อขยาย)</span
+                    >
+                </p>
+
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50 rounded-md overflow-x-auto cursor-pointer hover:border-red-300 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                    title="Click to view full screen"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    graph TD
+                        %% Styling
+                        classDef core fill:#0f172a,stroke:#334155,stroke-width:2px,color:#ffffff
+                        classDef ui fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155
+                        classDef generic fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#475569,stroke-dasharray: 5 5
+
+                        App["App.tsx<br/>(State Manager)"]:::core
+                        
+                        Header["Header.tsx"]:::ui
+                        Controls["FilterControls.tsx"]:::ui
+                        Content["ContentArea"]:::generic
+                        
+                        Grid["EntityGrid.tsx"]:::ui
+                        Card["EntityCard.tsx<br/>(Union Type Props)"]:::ui
+                        Page["Pagination.tsx"]:::ui
+                        
+                        App -->|Props: stats| Header
+                        App -->|Props: filters & Callbacks| Controls
+                        App --> Content
+                        
+                        Content --> Grid
+                        Content --> Page
+                        
+                        Grid -->|Array.map| Card
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-md shadow-sm border border-slate-200 border-t-4 border-t-red-600"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    1a. Data Flow
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">
+                    แสดงการไหลของข้อมูล (Data Flow) ตั้งแต่ Mock Database
+                    ไปสู่การกรองข้อมูล (Utility) ก่อนนำไปแสดงผลที่ UI
+                    <span class="text-slate-700 font-semibold"
+                        >(คลิกที่ภาพเพื่อขยาย)</span
+                    >
+                </p>
+
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50 rounded-md overflow-x-auto cursor-pointer hover:border-red-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                    title="Click to view full screen"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    graph LR
+                        %% Styling
+                        classDef data fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#334155
+                        classDef logic fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#991b1b
+                        classDef state fill:#0f172a,stroke:#334155,stroke-width:2px,color:#ffffff
+                        classDef view fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155
+
+                        Mock[("mockData.ts<br/>(112 Entities)")]:::data
+                        AppState["App.tsx<br/>(Current State)"]:::state
+                        Util["dataProcessor.ts<br/>(Pure Functions)"]:::logic
+                        UI["UI Components<br/>(Rendering)"]:::view
+
+                        Mock -->|1. Import Raw Data| AppState
+                        AppState -->|2. Pass Data + Fiilter States| Util
+                        Util -->|3. Return Paginated Result| AppState
+                        AppState -->|4. Pass Final Data via Props| UI
+                        UI -.->|"5. User Triggers Events<br/>(onChange, onClick)"| AppState
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-md shadow-sm border border-slate-200 border-t-4 border-t-slate-700"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    2. Core Type Definitions (src/types)
+                </h2>
+                <div class="overflow-x-auto rounded-md border border-slate-200">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-slate-100 border-b border-slate-200 text-xs uppercase text-slate-600 tracking-wider"
+                            >
+                                <th
+                                    class="p-4 font-bold border-r border-slate-200"
+                                >
+                                    Interface / Type
+                                </th>
+                                <th
+                                    class="p-4 font-bold border-r border-slate-200"
+                                >
+                                    Base / Structure
+                                </th>
+                                <th class="p-4 font-bold">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-200">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-mono font-bold text-slate-700 border-r border-slate-200"
+                                >
+                                    BaseEntity
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-500 border-r border-slate-200"
+                                >
+                                    { id, name, era, combatStyle, midichlorian }
+                                </td>
+                                <td class="p-4 text-slate-600">
+                                    คุณสมบัติพื้นฐานที่ผู้ใช้พลัง (Force Users)
+                                    ทุกคนต้องมี
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-mono font-bold text-slate-500 border-r border-slate-200"
+                                >
+                                    JediEntity
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-500 border-r border-slate-200"
+                                >
+                                    extends BaseEntity<br />
+                                    <span class="text-slate-300"
+                                        >side: "Jedi"</span
+                                    ><br />
+                                    { jediRole, lightsaberColor }
+                                </td>
+                                <td class="p-4 text-slate-600">
+                                    Interface สำหรับเจได (ใช้ Literal Type กำหนด
+                                    side เป็น Jedi)
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-mono font-bold text-red-600 border-r border-slate-200"
+                                >
+                                    SithEntity
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-500 border-r border-slate-200"
+                                >
+                                    extends BaseEntity<br />
+                                    <span class="text-red-600"
+                                        >side: "Sith"</span
+                                    ><br />
+                                    { darthTitle, sithRole, corruptionLevel }
+                                </td>
+                                <td class="p-4 text-slate-600">
+                                    Interface สำหรับซิธ มีฟิลด์เฉพาะเช่น
+                                    darthTitle และ percent การถูกครอบงำ
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-slate-800 text-white transition-colors"
+                            >
+                                <td
+                                    class="p-4 font-mono font-bold border-r border-slate-700"
+                                >
+                                    ForceEntity
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs border-r border-slate-700 text-slate-300"
+                                >
+                                    JediEntity | SithEntity
+                                </td>
+                                <td class="p-4 text-slate-200 text-xs">
+                                    <strong class="text-red-400"
+                                        >Discriminated Union:</strong
+                                    >
+                                    ไทป์หลักที่นำไปใช้เป็น Props ของ Card
+                                    ควบคุมให้ TS
+                                    แยกแยะประเภทข้อมูลได้ถูกต้องตามฟิลด์ side
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-md shadow-sm border border-slate-200 border-t-4 border-t-red-600 mb-12"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    3. Project Structure Breakdown
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="border border-slate-200 rounded-md p-5 bg-slate-50"
+                    >
+                        <h3
+                            class="font-bold text-slate-800 border-b border-slate-300 pb-2 mb-3 uppercase text-sm"
+                        >
+                            src/components/
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-3">
+                            รวบรวม UI ทั้งหมด เน้นเขียนแบบ Dumb Components (รับ
+                            Props แสดงผลอย่างเดียว)
+                        </p>
+                        <ul
+                            class="list-disc list-inside text-sm text-slate-700 space-y-2 font-mono"
+                        >
+                            <li>
+                                App.tsx
+                                <span class="text-xs text-slate-400 font-sans"
+                                    >(State Holder)</span
+                                >
+                            </li>
+                            <li>EntityCard.tsx</li>
+                            <li>FilterControls.tsx</li>
+                            <li>Pagination.tsx</li>
+                        </ul>
+                    </div>
+                    <div
+                        class="border border-slate-200 rounded-md p-5 bg-slate-50"
+                    >
+                        <h3
+                            class="font-bold text-slate-800 border-b border-slate-300 pb-2 mb-3 uppercase text-sm"
+                        >
+                            src/utils/
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-3">
+                            แหล่งรวม Pure Functions ที่แยก Logic
+                            การคำนวณออกมาจากไฟล์ UI
+                        </p>
+                        <ul
+                            class="list-disc list-inside text-sm text-slate-700 space-y-2 font-mono"
+                        >
+                            <li>
+                                <span class="text-red-600 font-bold"
+                                    >dataProcessor.ts</span
+                                >
+                                <ul
+                                    class="ml-6 mt-1 space-y-1 text-xs text-slate-500"
+                                >
+                                    <li>- filterByCriteria(data, filters)</li>
+                                    <li>- sortData(data, sortBy)</li>
+                                    <li>- paginateData(data, page, limit)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div
+            id="diagramModal"
+            class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 lg:p-12 transition-opacity duration-300 opacity-0"
+            onclick="closeModal()"
+        >
+            <button
+                class="absolute top-6 right-6 text-slate-400 hover:text-red-500 text-4xl cursor-pointer z-50 transition-colors"
+            >
+                &times;
+            </button>
+
+            <div
+                class="bg-white p-6 lg:p-10 rounded-lg shadow-2xl w-full max-w-7xl h-full max-h-[90vh] overflow-auto flex items-center justify-center border-t-4 border-red-600"
+                onclick="event.stopPropagation()"
+            >
+                <div
+                    id="modalContent"
+                    class="w-full flex justify-center scale-100"
+                ></div>
+            </div>
+        </div>
+
+        <script type="module">
+            import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: "base",
+                themeVariables: {
+                    fontFamily:
+                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                    primaryColor: "#ffffff",
+                    primaryTextColor: "#334155",
+                    primaryBorderColor: "#cbd5e1",
+                    lineColor: "#64748b",
+                    secondaryColor: "#fef2f2", // red100
+                    tertiaryColor: "#f8fafc", // gray100
+                },
+            });
+
+            // modal logic
+            window.openModal = function (container) {
+                const modal = document.getElementById("diagramModal");
+                const modalContent = document.getElementById("modalContent");
+                const svg = container.querySelector("svg");
+
+                if (svg) {
+                    const clone = svg.cloneNode(true);
+                    clone.removeAttribute("width");
+                    clone.removeAttribute("height");
+                    clone.removeAttribute("style");
+                    clone.style.width = "100%";
+                    clone.style.height = "auto";
+                    clone.style.maxHeight = "85vh";
+                    clone.style.objectFit = "contain";
+
+                    modalContent.innerHTML = "";
+                    modalContent.appendChild(clone);
+
+                    modal.classList.remove("hidden");
+                    setTimeout(() => {
+                        modal.classList.remove("opacity-0");
+                    }, 10);
+                    document.body.style.overflow = "hidden";
+                }
+            };
+
+            window.closeModal = function () {
+                const modal = document.getElementById("diagramModal");
+                modal.classList.add("opacity-0");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                    document.getElementById("modalContent").innerHTML = "";
+                    document.body.style.overflow = "auto";
+                }, 300);
+            };
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeModal();
+                }
+            });
+        </script>
+    </body>
+</html>

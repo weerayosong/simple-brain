@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="th">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+Thai:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+
+        <title>Nextzy Gamification - Architecture Documentation</title>
+
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        />
+
+        <style>
+            body {
+                font-family: "Inter", "Noto Sans Thai", sans-serif !important;
+            }
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 10px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-slate-50 text-slate-800 font-sans antialiased p-6 lg:p-12 relative"
+    >
+        <div class="max-w-5xl mx-auto space-y-12">
+            <header
+                class="border-b-2 border-slate-300 pb-6 flex justify-between items-end"
+            >
+                <div>
+                    <h1
+                        class="text-4xl font-extrabold text-slate-900 tracking-tight uppercase flex items-center gap-3"
+                    >
+                        <i
+                            class="fa-solid fa-dharmachakra text-slate-700 text-3xl"
+                        ></i>
+                        <span
+                            >Nextzy
+                            <span class="text-slate-500"
+                                >Gamification</span
+                            ></span
+                        >
+                    </h1>
+                    <p
+                        class="text-slate-600 mt-2 font-semibold tracking-widest uppercase text-sm"
+                    >
+                        System Design & Software Architecture Documentation
+                    </p>
+                </div>
+                <div
+                    class="text-right text-xs font-bold text-slate-500 uppercase tracking-widest"
+                >
+                    Next.js + NestJS + Prisma + Supabase(PostgreSQL)
+                </div>
+            </header>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-800"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-sitemap text-slate-600"></i> 1.
+                    Architecture & Deployment
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">
+                    โครงสร้างระบบแบบ Separate Repositories แยกการทำงาน Client
+                    และ Server อย่างเด็ดขาดตามหลัก Clean Architecture
+                </p>
+
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    graph TD
+                        classDef git fill:#1e293b,stroke:#475569,stroke-width:2px,color:#f8fafc
+                        classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#334155
+                        classDef server fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+                        classDef db fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
+                        classDef deploy fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155,stroke-dasharray: 5 5
+                        classDef actor fill:#475569,stroke:#1e293b,stroke-width:2px,color:#ffffff
+
+                        User((Player)):::actor
+                        Dev((Developer)):::actor
+
+                        subgraph SourceCode ["Version Control (Separate Repos)"]
+                            ClientRepo["GitHub<br/>(nextzy-client)"]:::git
+                            ServerRepo["GitHub<br/>(nextzy-server)"]:::git
+                        end
+
+                        subgraph CICD ["CI/CD Pipeline"]
+                            Vercel["Vercel Edge<br/>(Hosting & CDN)"]:::deploy
+                            Render["Render.com<br/>(Node.js Server)"]:::deploy
+                        end
+
+                        subgraph Presentation ["Presentation Layer (Next.js)"]
+                            UI["Pages & Components<br/>(Tailwind CSS)"]:::client
+                        end
+
+                        subgraph Application ["Application & Domain Layer (NestJS)"]
+                            API["Controllers & Services<br/>(Business Logic)"]:::server
+                        end
+
+                        subgraph Infrastructure ["Infrastructure Layer (Database)"]
+                            Prisma["Prisma ORM"]:::server
+                            Supabase[("PostgreSQL<br/>(Supabase)")]:::db
+                        end
+
+                        %% --- Connections ---
+                        ClientRepo -->|Auto Deploy| Vercel
+                        ServerRepo -->|Auto Deploy| Render
+
+                        Vercel -.-> UI
+                        Render -.-> API
+
+                        User -->|Interact| UI
+                        UI <-->|REST API JSON Contract| API
+
+                        API -->|Query & Transaction| Prisma
+                        Prisma <-->|Connection Pool| Supabase
+
+                        %% --- CSV Direct Import ---
+                        Dev -->|ETL Script & Batch Insert 2 Million Rows | Prisma
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-600 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-brands fa-react text-slate-600"></i> 1A.
+                    Frontend Architecture (Next.js)
+                </h2>
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    graph TD
+                        classDef state fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b,stroke-dasharray: 5 5
+                        classDef pages fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+                        classDef ui fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155
+                        classDef api fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
+
+                        subgraph GlobalState ["1. Global State Layer"]
+                            Context["React Context API<br/>(เก็บชื่อผู้เล่น และ คะแนนสะสม)"]:::state
+                        end
+
+                        subgraph PagesLayer ["2. Pages (Next.js App Router)"]
+                            Landing["/ (Landing Page)<br/>หน้าเข้าสู่ระบบ"]:::pages
+                            Home["/home (Dashboard)<br/>หน้าหลัก & Layout"]:::pages
+                            Game["/game (Play Area)<br/>หน้าวงล้อ"]:::pages
+                        end
+
+                        subgraph ComponentLayer ["3. UI Components (Client Side)"]
+                            ProgressUI["Progress Bar & Claim Button"]:::ui
+                            TabsUI["History Tabs<br/>(สลับด้วย useState)"]:::ui
+                            WheelUI["Wheel Spinner"]:::ui
+                            ModalUI["Reusable Alert Modal<br/>(แสดงผลแจ้งเตือน/รับรางวัล)"]:::ui
+                        end
+
+                        subgraph ServiceLayer ["4. Hooks & API Services"]
+                            AuthHook["useAuth()"]:::api
+                            GameHook["useGame()"]:::api
+                            RewardHook["useReward()"]:::api
+                            Fetch["Native Fetch API"]:::api
+                        end
+
+                        %% Data Flow & State Connections
+                        Context -.->|Read / Write State| PagesLayer
+
+                        %% Page to Components
+                        Landing -->|1. กรอกชื่อ| AuthHook
+                        Home -->|2. แสดงความคืบหน้า| ProgressUI
+                        Home -->|3. สลับประวัติ| TabsUI
+                        Game -->|4. แสดงวงล้อ| WheelUI
+                        Game -->|5. กดหมุน| GameHook
+                        
+                        %% Component Interactions
+                        WheelUI -->|วงล้อหยุด แจ้งคะแนน| ModalUI
+                        ProgressUI -->|กดรับรางวัล| RewardHook
+                        RewardHook -->|รับสำเร็จ แจ้งเตือน| ModalUI
+
+                        %% API Calls
+                        AuthHook -->|POST /login| Fetch
+                        GameHook -->|POST /spin| Fetch
+                        RewardHook -->|POST /claim| Fetch
+                        TabsUI -->|GET /history| Fetch
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-700 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-brands fa-node-js text-slate-700"></i> 1B.
+                    Backend Architecture (NestJS)
+                </h2>
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    graph TD
+                        classDef ctrl fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b
+                        classDef srv fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+                        classDef core fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
+
+                        subgraph Auth ["AuthModule"]
+                            AuthCtrl["AuthController<br/>(POST /login)"]:::ctrl
+                            AuthSrv["AuthService<br/>(ค้นหา/สร้างผู้เล่น)"]:::srv
+                        end
+
+                        subgraph Game ["GameModule"]
+                            GameCtrl["GameController<br/>(POST /spin)"]:::ctrl
+                            GameSrv["GameService<br/>(สุ่มคะแนน & บันทึกประวัติ)"]:::srv
+                        end
+
+                        subgraph Reward ["RewardModule"]
+                            RewardCtrl["RewardController<br/>(POST /claim)"]:::ctrl
+                            RewardSrv["RewardService<br/>(ตรวจสอบ Checkpoint)"]:::srv
+                        end
+
+                        subgraph History ["HistoryModule"]
+                            HistCtrl["HistoryController<br/>(GET /history/:userId)"]:::ctrl
+                            HistSrv["HistoryService<br/>(จัดการ Pagination)"]:::srv
+                        end
+
+                        subgraph DatabaseLayer ["PrismaModule"]
+                            PrismaSrv["PrismaService<br/>(จัดการ Connection DB)"]:::core
+                        end
+
+                        %% Connections
+                        AuthCtrl --> AuthSrv
+                        GameCtrl --> GameSrv
+                        RewardCtrl --> RewardSrv
+                        HistCtrl --> HistSrv
+
+                        AuthSrv --> PrismaSrv
+                        GameSrv --> PrismaSrv
+                        RewardSrv --> PrismaSrv
+                        HistSrv --> PrismaSrv
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-800 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-database text-slate-800"></i> 1C.
+                    Database Architecture (Supabase)
+                </h2>
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    erDiagram
+                        USER ||--o{ SPIN_HISTORY : "has many"
+                        USER ||--o{ REWARD_CLAIM : "has many"
+
+                        USER {
+                            uuid id PK
+                            string nickname "UNIQUE, INDEX"
+                            int totalPoints "Denormalized SUM"
+                            datetime createdAt
+                        }
+
+                        SPIN_HISTORY {
+                            uuid id PK
+                            uuid userId FK "INDEX (For 2M Rows)"
+                            int pointsReceived
+                            datetime createdAt
+                        }
+
+                        REWARD_CLAIM {
+                            uuid id PK
+                            uuid userId FK
+                            int checkpoint "500, 1000, 10000"
+                            datetime claimedAt
+                            string constraint "@@unique([userId, checkpoint])"
+                        }
+                    </pre>
+                </div>
+
+                <div
+                    class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
+                >
+                    <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">
+                        <i class="fa-solid fa-circle-info text-slate-400"></i>
+                        Diagram Legend (Crow's Foot Notation)
+                    </h4>
+                    <ul class="text-xs text-slate-600 space-y-1">
+                        <li>
+                            <code
+                                class="text-slate-800 font-bold bg-slate-200 px-1 rounded"
+                                >||</code
+                            >
+                            <strong>(One and only one):</strong>
+                            ข้อมูลฝั่งนี้ต้องมีเพียง 1 รายการเท่านั้น (เช่น 1
+                            ประวัติต้องผูกกับ 1 ผู้เล่น)
+                        </li>
+                        <li>
+                            <code
+                                class="text-slate-800 font-bold bg-slate-200 px-1 rounded"
+                                >o{</code
+                            >
+                            <strong>(Zero or many):</strong>
+                            ข้อมูลฝั่งนี้อาจจะไม่มีเลย หรือมีได้หลายรายการ (เช่น
+                            ผู้เล่น 1 คน อาจมีหลายหรือไม่มีประวัติการหมุนก็ได้)
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-900 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-users-gear text-slate-800"></i> 1D.
+                    Use Case Diagram
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">
+                    แสดงพฤติกรรมของผู้ใช้งานระบบ (Actors)
+                    และกระบวนการทำงานที่ซ่อนอยู่เบื้องหลัง (Includes)
+                </p>
+
+                <div
+                    class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                    onclick="openModal(this)"
+                >
+                    <pre
+                        class="mermaid group-hover:opacity-90 transition-opacity"
+                    >
+                    flowchart LR
+                        classDef actor fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b
+                        classDef usecase fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155
+                        classDef hiddenSystem fill:#f1f5f9,stroke:#64748b,stroke-width:1px,stroke-dasharray: 3 3,color:#475569
+
+                        Player((Player)):::actor
+                        Admin((Developer)):::actor
+
+                        subgraph SystemBoundary ["Nextzy Gamification System"]
+                            direction TB
+                            
+                            UC1(["เข้าสู่ระบบ (Login)"]):::usecase
+                            UC2(["ดูคะแนนและ Checkpoint"]):::usecase
+                            
+                            UC3(["หมุนวงล้อสุ่มคะแนน"]):::usecase
+                            UC3_1(["สุ่มคะแนน 300, 500, 1k, 3k"]):::hiddenSystem
+                            UC3_2(["บันทึกประวัติ SpinHistory"]):::hiddenSystem
+                            UC3_3(["บวกคะแนนใน totalPoints"]):::hiddenSystem
+                            
+                            UC4(["กดรับรางวัล (Claim)"]):::usecase
+                            UC4_1(["ตรวจสอบ Unique Constraint"]):::hiddenSystem
+                            
+                            UC5(["ดูประวัติการเล่น / รางวัล"]):::usecase
+                            UC6(["นำเข้าไฟล์ CSV 2,000,000 แถว"]):::usecase
+                        end
+
+                        %% --- กำหนดเส้นเชื่อมโยงทั้งหมดไว้ด้านนอก Subgraph ---
+                        
+                        %% Includes Flow
+                        UC3 -.->|"include"| UC3_1
+                        UC3 -.->|"include"| UC3_2
+                        UC3 -.->|"include"| UC3_3
+                        UC4 -.->|"include"| UC4_1
+
+                        %% Actor to Use Cases
+                        Player --> UC1
+                        Player --> UC2
+                        Player --> UC3
+                        Player --> UC4
+                        Player --> UC5
+                        
+                        Admin -->|"ผ่าน Supabase Dashboard"| UC6
+                    </pre>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-700 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-microchip text-slate-600"></i> 2. Core
+                    Technical Strategies & Standards
+                </h2>
+
+                <div class="mb-8">
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i class="fa-solid fa-sitemap text-slate-400"></i> 2A.
+                        Architecture & Code Quality
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-layer-group text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Clean Architecture
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                แยก Presentation (Next.js) ออกจาก
+                                Application/Domain Logic (NestJS) อย่างเด็ดขาด
+                                หน้าบ้านรับหน้าที่แสดงผล การคำนวณและ Business
+                                Logic ทั้งหมดจะถูกห่อหุ้มไว้ใน Services
+                                ของหลังบ้าน
+                            </p>
+                        </div>
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-code text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    TypeScript & Minimalist
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                บังคับใช้ TypeScript Strict Mode ทั้งระบบ และใช้
+                                Native Features (เช่น Fetch API, Tailwind v4 ไร้
+                                Config) เพื่อลด Dependency
+                                ขยะและรักษาความคลีนของโปรเจกต์
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i class="fa-solid fa-bolt text-slate-400"></i> 2B.
+                        Performance & Data Strategies
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-database text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Denormalization & Indexing
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                จัดเก็บ <code>totalPoints</code> ไว้ในตาราง User
+                                โดยตรงเพื่อเลี่ยงคำสั่ง SUM และสร้าง Index ที่
+                                <code>userId</code>
+                                เพื่อรองรับการค้นหาประวัติจากข้อมูล 1
+                                ล้านแถวอย่างรวดเร็ว
+                            </p>
+                        </div>
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-cloud-arrow-up text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Offloading to Supabase
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                ตัดภาระเซิร์ฟเวอร์ด้วยการใช้ฟีเจอร์ Bulk Import
+                                CSV ผ่านหน้า Dashboard ของ Supabase โดยตรง
+                                เพื่อนำเข้าข้อมูล 1,000,000
+                                แถวอย่างปลอดภัยและรวดเร็ว
+                            </p>
+                        </div>
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-rocket text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    High Performance Rendering
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                ใช้ประโยชน์จาก Vercel Edge Network
+                                ควบคู่กับการทำ Responsive Design อย่างประณีต
+                                เพื่อรักษาคะแนน PageSpeed (FCP, LCP)
+                                ให้อยู่ในเกณฑ์สูงสุด
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i class="fa-solid fa-shield-halved text-slate-400"></i>
+                        2C. Reliability & Testing
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-triangle-exclamation text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Global Error Pipeline
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                จัดการ Error อย่างเป็นระบบ หลังบ้านใช้ Exception
+                                Filters (NestJS) คืนค่า HTTP Status ที่ถูกต้อง
+                                ส่วนหน้าบ้านดักจับด้วย Try-Catch และแสดงผลผ่าน
+                                UI Toast ที่เป็นมิตรกับผู้ใช้
+                            </p>
+                        </div>
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-vial-circle-check text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Automated Testing (Jest)
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                เขียน Unit Test ด้วย Jest ควบคุมคุณภาพของ
+                                Business Logic ที่สำคัญ โดยเฉพาะ
+                                <code>GameService</code> (การสุ่มคะแนน) และ
+                                <code>RewardService</code> (การตรวจสอบ
+                                Checkpoint)
+                            </p>
+                        </div>
+                        <div
+                            class="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <i
+                                    class="fa-solid fa-lock text-slate-500 text-lg"
+                                ></i>
+                                <h4
+                                    class="font-bold text-slate-800 text-sm uppercase"
+                                >
+                                    Database Constraints
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                ป้องกันการทุจริตและการรับรางวัลซ้ำซ้อนด้วย
+                                <code>@@unique([userId, checkpoint])</code>
+                                ในระดับ Prisma Schema
+                                ซึ่งเป็นด่านสุดท้ายที่แข็งแกร่งที่สุดแม้เกิด
+                                Race Condition
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-600 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-arrows-turn-right text-slate-600"></i>
+                    3. Sequence Diagrams (Data Flows)
+                </h2>
+
+                <div class="mb-8">
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-2 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i
+                            class="fa-solid fa-right-to-bracket text-slate-400"
+                        ></i>
+                        3A. Authentication Flow (เข้าสู่ระบบ)
+                    </h3>
+                    <div
+                        class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                        onclick="openModal(this)"
+                    >
+                        <pre
+                            class="mermaid group-hover:opacity-90 transition-opacity"
+                        >
+                        sequenceDiagram
+                            autonumber
+                            participant User
+                            participant React as Next.js (Client)
+                            participant API as NestJS (AuthModule)
+                            participant DB as PostgreSQL (Supabase)
+
+                            User->>React: กรอกชื่อ (Nickname) และกดเข้าเล่น
+                            React->>API: POST /auth/login { nickname }
+                            
+                            rect rgb(248, 250, 252)
+                                Note over API,DB: Check & Upsert Logic
+                                API->>DB: ค้นหาผู้เล่นด้วย nickname (findUnique)
+                                alt ผู้เล่นเก่า (Found)
+                                    DB-->>API: คืนค่า id, totalPoints เดิม
+                                else ผู้เล่นใหม่ (Not Found)
+                                    API->>DB: สร้างผู้เล่นใหม่ (create)
+                                    DB-->>API: คืนค่า id ใหม่, totalPoints = 0
+                                end
+                            end
+
+                            API-->>React: Return User Data
+                            React->>React: อัปเดต Global State (Context)
+                            React->>User: พาเข้าสู่หน้า /home
+                        </pre>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-2 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i class="fa-solid fa-dharmachakra text-slate-400"></i>
+                        3B. Game Core Flow (หมุนวงล้อ)
+                    </h3>
+                    <div
+                        class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                        onclick="openModal(this)"
+                    >
+                        <pre
+                            class="mermaid group-hover:opacity-90 transition-opacity"
+                        >
+                        sequenceDiagram
+                            autonumber
+                            participant User
+                            participant React as Next.js (Client)
+                            participant API as NestJS (GameModule)
+                            participant DB as PostgreSQL (Supabase)
+
+                            User->>React: กดปุ่ม "เริ่มหมุน" (หน้า /game)
+                            React->>React: Disable ปุ่ม (ป้องกันกดเบิ้ล)
+                            React->>API: POST /game/spin { userId }
+                            
+                            rect rgb(248, 250, 252)
+                                Note over API,DB: Transactional Logic
+                                API->>API: สุ่มคะแนน (300, 500, 1000, 3000)
+                                API->>DB: BEGIN TRANSACTION
+                                API->>DB: INSERT INTO SpinHistory
+                                API->>DB: UPDATE User (totalPoints += newScore)
+                                DB-->>API: COMMIT
+                            end
+
+                            API-->>React: Return { pointsReceived, newTotalPoints }
+                            React->>React: เล่นแอนิเมชันวงล้อ -> หยุดที่คะแนนที่ได้
+                            React->>React: อัปเดต Global State (คะแนนรวมใหม่)
+                            React->>User: แสดง Modal "ได้รับ xxxx คะแนน"
+                        </pre>
+                    </div>
+                </div>
+
+                <div>
+                    <h3
+                        class="text-lg font-bold text-slate-700 mb-2 flex items-center gap-2 border-b border-slate-200 pb-2"
+                    >
+                        <i class="fa-solid fa-crown text-slate-400"></i> 3C.
+                        Reward Claim Flow (กดรับรางวัล)
+                    </h3>
+                    <div
+                        class="flex justify-center p-4 border border-slate-200 bg-slate-50/80 rounded-lg overflow-x-auto cursor-pointer hover:border-slate-400 hover:shadow-md transition-all duration-300 group"
+                        onclick="openModal(this)"
+                    >
+                        <pre
+                            class="mermaid group-hover:opacity-90 transition-opacity"
+                        >
+                        sequenceDiagram
+                            autonumber
+                            participant User
+                            participant React as Next.js (Client)
+                            participant API as NestJS (GameModule)
+                            participant DB as PostgreSQL (Supabase)
+
+                            User->>React: กดรับรางวัล (เช่น Checkpoint 500)
+                            React->>API: POST /rewards/claim { userId, checkpoint: 500 }
+                            
+                            rect rgb(248, 250, 252)
+                                Note over API,DB: Validation & Constraint
+                                API->>DB: ตรวจสอบ totalPoints ว่า >= 500 หรือไม่?
+                                alt คะแนนไม่ถึง
+                                    API-->>React: 400 Bad Request
+                                else คะแนนถึงเกณฑ์
+                                    API->>DB: INSERT INTO RewardClaim
+                                    Note right of DB: หากเคยรับแล้ว Database จะ Reject<br/>ด้วย Unique Constraint ทันที
+                                    alt ติด Unique Constraint
+                                        DB--xAPI: Error (Already Claimed)
+                                        API-->>React: 409 Conflict
+                                    else สำเร็จ
+                                        DB-->>API: Success
+                                        API-->>React: Return 201 Created
+                                    end
+                                end
+                            end
+
+                            alt Success
+                                React->>User: แสดง Modal "ยินดีด้วย คุณได้รับรางวัล"
+                                React->>React: อัปเดต UI ปุ่มเป็น "รับรางวัลแล้ว"
+                            else Error
+                                React->>User: แสดง Modal Error
+                            end
+                        </pre>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-700 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-file-contract text-slate-600"></i> 4.
+                    API Specification Contract
+                </h2>
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-slate-100 border-b border-slate-200 text-xs uppercase text-slate-500 tracking-wider"
+                            >
+                                <th
+                                    class="p-4 font-bold border-r border-slate-200 w-24"
+                                >
+                                    Method
+                                </th>
+                                <th
+                                    class="p-4 font-bold border-r border-slate-200"
+                                >
+                                    Endpoint
+                                </th>
+                                <th class="p-4 font-bold">
+                                    Description & Payload
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-bold text-slate-700 border-r border-slate-200"
+                                >
+                                    POST
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-600 border-r border-slate-200"
+                                >
+                                    /users/login
+                                </td>
+                                <td class="p-4 text-slate-600 text-xs">
+                                    ตรวจสอบผู้เล่นเก่า/สร้างใหม่ <br />
+                                    <span
+                                        class="text-slate-400 font-mono mt-1 block"
+                                        >Body: { nickname: string }</span
+                                    >
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-bold text-slate-700 border-r border-slate-200"
+                                >
+                                    POST
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-600 border-r border-slate-200"
+                                >
+                                    /game/spin
+                                </td>
+                                <td class="p-4 text-slate-600 text-xs">
+                                    สุ่มคะแนน บันทึกประวัติ และอัปเดตคะแนนรวม
+                                    <br />
+                                    <span
+                                        class="text-slate-400 font-mono mt-1 block"
+                                        >Body: { userId: string }</span
+                                    >
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-bold text-slate-700 border-r border-slate-200"
+                                >
+                                    POST
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-600 border-r border-slate-200"
+                                >
+                                    /rewards/claim
+                                </td>
+                                <td class="p-4 text-slate-600 text-xs">
+                                    ตรวจสอบเงื่อนไขและบันทึกการรับรางวัล
+                                    (Checkpoint) <br />
+                                    <span
+                                        class="text-slate-400 font-mono mt-1 block"
+                                        >Body: { userId: string, checkpoint:
+                                        number }</span
+                                    >
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td
+                                    class="p-4 font-bold text-slate-700 border-r border-slate-200"
+                                >
+                                    GET
+                                </td>
+                                <td
+                                    class="p-4 font-mono text-xs text-slate-600 border-r border-slate-200"
+                                >
+                                    /history/:userId
+                                </td>
+                                <td class="p-4 text-slate-600 text-xs">
+                                    ดึงข้อมูลประวัติผู้เล่นทั่วโลกจากตารางใหญ่
+                                    (จำกัด Query ด้วย Pagination) <br />
+                                    <span
+                                        class="text-slate-400 font-mono mt-1 block"
+                                        >Query: ?page=1&limit=50</span
+                                    >
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section
+                class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-800 mb-12 mt-8"
+            >
+                <h2
+                    class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide"
+                >
+                    <i class="fa-solid fa-folder-tree text-slate-700"></i> 5.
+                    Repository & Structure
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="border border-slate-200 rounded-lg p-5 bg-slate-50"
+                    >
+                        <h3
+                            class="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3 uppercase text-sm flex items-center gap-2"
+                        >
+                            <i class="fa-brands fa-react text-slate-600"></i>
+                            nextzy-game-client/
+                            <span
+                                class="text-xs font-sans font-normal text-slate-500"
+                                >(Next.js + Tw v4)</span
+                            >
+                        </h3>
+                        <ul
+                            class="text-sm text-slate-700 space-y-2 font-mono ml-2 border-l border-slate-300 pl-4"
+                        >
+                            <li class="flex items-center gap-2">
+                                <i
+                                    class="fa-solid fa-file-code text-slate-400"
+                                ></i>
+                                .env.local
+                            </li>
+                            <li
+                                class="mt-2 font-semibold flex items-center gap-2"
+                            >
+                                <i
+                                    class="fa-solid fa-folder-open text-slate-500"
+                                ></i>
+                                src/
+                            </li>
+                            <ul
+                                class="ml-4 border-l border-slate-200 pl-4 mt-1 space-y-1"
+                            >
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-400"
+                                    ></i>
+                                    app/
+                                    <span
+                                        class="text-[10px] text-slate-400 font-sans"
+                                        >(Pages)</span
+                                    >
+                                </li>
+                                <ul
+                                    class="ml-4 border-l border-slate-200 pl-4 mt-1 mb-1 space-y-1"
+                                >
+                                    <li class="flex items-center gap-2">
+                                        <i
+                                            class="fa-brands fa-css3-alt text-slate-400"
+                                        ></i>
+                                        globals.css
+                                        <span
+                                            class="text-[10px] text-slate-400 font-sans"
+                                            >(Tw v4 Config)</span
+                                        >
+                                    </li>
+                                </ul>
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-400"
+                                    ></i>
+                                    components/
+                                    <span
+                                        class="text-[10px] text-slate-400 font-sans"
+                                        >(Wheel, Modal)</span
+                                    >
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-400"
+                                    ></i>
+                                    services/
+                                    <span
+                                        class="text-[10px] text-slate-400 font-sans"
+                                        >(API Calls)</span
+                                    >
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-400"
+                                    ></i>
+                                    types/
+                                </li>
+                            </ul>
+                        </ul>
+                    </div>
+
+                    <div
+                        class="border border-slate-300 rounded-lg p-5 bg-slate-100"
+                    >
+                        <h3
+                            class="font-bold text-slate-900 border-b border-slate-300 pb-2 mb-3 uppercase text-sm flex items-center gap-2"
+                        >
+                            <i class="fa-brands fa-node-js text-slate-700"></i>
+                            nextzy-game-server/
+                            <span
+                                class="text-xs font-sans font-normal text-slate-500"
+                                >(NestJS)</span
+                            >
+                        </h3>
+                        <ul
+                            class="text-sm text-slate-800 space-y-2 font-mono ml-2 border-l border-slate-400 pl-4"
+                        >
+                            <li class="flex items-center gap-2">
+                                <i
+                                    class="fa-solid fa-file-shield text-slate-500"
+                                ></i>
+                                .env
+                            </li>
+                            <li
+                                class="mt-2 font-semibold flex items-center gap-2"
+                            >
+                                <i
+                                    class="fa-solid fa-folder-open text-slate-600"
+                                ></i>
+                                prisma/
+                            </li>
+                            <ul
+                                class="ml-4 border-l border-slate-300 pl-4 mt-1 mb-2 space-y-1"
+                            >
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-file-code text-slate-500"
+                                    ></i>
+                                    schema.prisma
+                                </li>
+                            </ul>
+                            <li class="font-semibold flex items-center gap-2">
+                                <i
+                                    class="fa-solid fa-folder-open text-slate-600"
+                                ></i>
+                                src/
+                            </li>
+                            <ul
+                                class="ml-4 border-l border-slate-300 pl-4 mt-1 space-y-1"
+                            >
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-500"
+                                    ></i>
+                                    modules/
+                                    <span
+                                        class="text-[10px] text-slate-500 font-sans"
+                                        >(game, auth, history, reward)</span
+                                    >
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i
+                                        class="fa-solid fa-folder text-slate-500"
+                                    ></i>
+                                    common/
+                                    <span
+                                        class="text-[10px] text-slate-500 font-sans"
+                                        >(filters, guards)</span
+                                    >
+                                </li>
+                            </ul>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div
+            id="diagramModal"
+            class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 lg:p-12 transition-opacity duration-300 opacity-0"
+            onclick="closeModal()"
+        >
+            <button
+                class="absolute top-6 right-6 text-slate-400 hover:text-white text-4xl cursor-pointer z-50 transition-colors"
+            >
+                <i class="fa-solid fa-times"></i>
+            </button>
+            <div
+                class="bg-white p-6 lg:p-10 rounded-2xl shadow-2xl w-full max-w-7xl h-full max-h-[90vh] overflow-auto flex items-center justify-center border-t-4 border-slate-600"
+                onclick="event.stopPropagation()"
+            >
+                <div
+                    id="modalContent"
+                    class="w-full flex justify-center scale-100"
+                ></div>
+            </div>
+        </div>
+
+        <script type="module">
+            import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+            // ตั้งค่าฟอนต์ภาษาไทยและธีมสำหรับ Mermaid
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: "base",
+                themeVariables: {
+                    fontFamily: '"Inter", "Noto Sans Thai", sans-serif',
+                    lineColor: "#64748b",
+                    textColor: "#1e293b",
+                },
+            });
+
+            window.openModal = function (container) {
+                const modal = document.getElementById("diagramModal");
+                const modalContent = document.getElementById("modalContent");
+                const svg = container.querySelector("svg");
+                if (svg) {
+                    const clone = svg.cloneNode(true);
+                    clone.style.width = "100%";
+                    clone.style.height = "auto";
+                    clone.style.maxHeight = "85vh";
+                    clone.style.objectFit = "contain";
+                    modalContent.innerHTML = "";
+                    modalContent.appendChild(clone);
+                    modal.classList.remove("hidden");
+                    setTimeout(() => {
+                        modal.classList.remove("opacity-0");
+                    }, 10);
+                    document.body.style.overflow = "hidden";
+                }
+            };
+            window.closeModal = function () {
+                const modal = document.getElementById("diagramModal");
+                modal.classList.add("opacity-0");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                    document.getElementById("modalContent").innerHTML = "";
+                    document.body.style.overflow = "auto";
+                }, 300);
+            };
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") closeModal();
+            });
+        </script>
+    </body>
+</html>
