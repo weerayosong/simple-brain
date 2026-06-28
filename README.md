@@ -4,6 +4,8 @@
 
 โปรเจกต์นี้คือ **"ศูนย์บัญชาการความรู้ (Knowledge Control Center)"** ที่ออกแบบมาเพื่อทำงานร่วมกับ AI (Gemini) และระบบ Multi-Agent โดยเฉพาะ จุดประสงค์คือการลดภาระมนุษย์ในการจัดระเบียบข้อมูล และสร้างฐานความรู้ที่ AI สามารถอ่านทำความเข้าใจได้อย่างรวดเร็วและแม่นยำที่สุด
 
+![ss](https://github.com/weerayosong/weerayosong.github.io/blob/main/images/gif/proj10.gif?raw=true)
+
 ---
 
 ## 🛠️ ความต้องการของระบบ (Prerequisites)
