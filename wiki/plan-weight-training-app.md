@@ -57,13 +57,13 @@ tags:
 ## 📋 5. Step-by-step Implementation Tasks
 
 ### Phase 1: Foundation (สัปดาห์ที่ 1)
-- [ ] Setup โปรเจกต์ด้วย Vite + React + TS
-- [ ] ติดตั้ง TailwindCSS และวางโครงสร้างโฟลเดอร์
+- [x] Setup โปรเจกต์ด้วย Vite + React + TS
+- [x] ติดตั้ง TailwindCSS และวางโครงสร้างโฟลเดอร์
 - [ ] ร่าง TypeScript Interfaces (`types.ts`) สำหรับข้อมูลการออกกำลังกาย
 
 ### Phase 2: Core Core Features (สัปดาห์ที่ 1-2)
-- [ ] สร้างหน้าจอ Routine Builder (เพิ่มท่าลงในวันต่างๆ)
-- [ ] สร้างระบบ State ด้วย Zustand เพื่อเก็บข้อมูลตาราง
+- [x] สร้างหน้าจอ Routine Builder (เพิ่มท่าลงในวันต่างๆ)
+- [x] สร้างระบบ State ด้วย Zustand เพื่อเก็บข้อมูลตาราง
 - [ ] ทำระบบ Persistence เซฟลง LocalStorage
 
 ### Phase 3: Workout Execution (สัปดาห์ที่ 2)
